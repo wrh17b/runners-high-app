@@ -57,7 +57,7 @@ Runner's High is a mood-tracking and run-tracking app that allows users to log t
 * Home Screen
 * Data visuals screen. Graphs etc
 * Mood Logging Screen
-* Map Screen
+* Map/Running Screen
 
 **Flow Navigation** (Screen to Screen)
 
@@ -69,13 +69,149 @@ Runner's High is a mood-tracking and run-tracking app that allows users to log t
    * => Settings Screen
 
 ## Wireframes
-<img src="/WireframeCodepath-1.png" width=600>
+<img src="./WireframeCodePath-1.png" width=600>
 
-## Schema 
-[This section will be completed in Unit 9]
+## Schema
 ### Models
-[Add table of models]
+
+**RunLog**
+| Property | Type           | Description                    |
+| -------- | -------------- | ------------------------------ |
+| objectId | String         | ObjectId stored in Parse       |
+| preMood  | Mood           | Mood before the run            |
+| postMood | Mood           | Mood after the run             |
+| Path     | List<Location> | Path of the run                |
+| Time     | int            | Text                           |
+| Date     | int            | Date of run                    |
+| Distance | double         | Distance of run                |
+| Note     | String         | Extra notes about the run/mood |
+
+**Mood**
+| Property | Type   | Description        |
+| -------- | ------ | ------------------ |
+| objectId | String | ObjectId for Parse |
+| Anxiety  | int    | level of anxiety   |
+| Stress   | int    | level of stress    |
+| Overall  | int    | overall vibes      |
+
+
+
+
 ### Networking
-- [Add list of network requests by screen ]
+- [Home Screen-displays all data for most recent run ]
+- [Data Screen-Displays all data for all runs]
 - [Create basic snippets for each Parse network request]
 - [OPTIONAL: List endpoints if using existing API such as Yelp]
+
+**Login Screen**
+- (GET) Login check network request (when user presses login button)
+```java
+ParseUser.logInInBackground(USERNAME, PASSWORD, new LogInCallback() {
+    public void done(ParseUser user, ParseException e) {
+        if(user != null) {
+            //Successful login
+            startActivity(new Intent(this, MainActivity.class));
+        }
+        else {
+            //LogIn failed
+            //Display message about incorrect login
+            Log.e("LoginActivity", e.getMessage());
+        }
+    }
+});
+```
+- (POST) SignUp network request (when user presses signup button)
+```java
+ParseUser user = new ParseUser();
+
+user.setUsername(USER_TEXT_STRING);
+user.setPassword(PASS_TEXT_STRING);
+
+user.signUpInBackground(new SignUpCallback() {
+  public void done(ParseException e) {
+    if (e == null) {
+      //User successfully signed up
+      startActivity(new Intent(this, MainActivity.class));
+    } else {
+      //Error signing up
+      //Print error message to user
+      Log.e("LoginActivity", e.getMessage());
+    }
+  }
+});
+```
+- (GET) Check if logged in already
+```java
+if(ParseUser.getCurrentUser() != null) {
+    startActivity(new Intent(this, MainActivity.class));
+}
+```
+
+**RunLog**
+- (GET) Querying all runs to display in RecyclerView
+```java
+ParseQuery<Run> query = ParseQuery.getQuery(Run.class);
+query.include(Post.KEY_USER);
+query.addDescendingOrder(POST_CREATED_AT);
+query.findInBackground(new FindCallback<Run>(){
+    @Override
+    public void done(List<Run> queryRuns, ParseException e) {
+        if(e!=null){
+            Log.e(TAG, "Error querying runs",e );
+            //something has gone wrong
+            return;
+        }
+        runs.addAll(queryruns);
+        runAdapter.notifyDataSetChanged();
+    }
+});  
+```
+
+**Running/Map Screen**
+- (POST) Save run request (after user ends run)
+```java
+//Run is a ParseObject
+Run run = new Run();
+
+//These calls can be handled with object's methods
+run.put("preMood", PRE_MOOD_OBJECT);
+run.put("postMood", POST_MOOD_OBJECT);
+run.put("path", LOCATION_DATA_FOR_RUN_PATH);
+run.put("time", RUN_TIME);
+run.put("date", DATE_OF_RUN);
+run.put("distance", RUN_DISTANCE);
+run.put("note", RUN_NOTE);
+
+run.saveInBackground(new SaveCallback() {
+    public void done(ParseException e) {
+        if(e == null) {
+            //Update the List<Run> we have
+            runAdapter.notifyDataSetChanged();
+        }
+        else {
+            //Run could not be properly saved
+            //Print error message to inform user
+            Log.e("MainActivity", e.getMessage());
+        }
+    }
+});
+```
+
+**Data Visuals/Logged Runs Screen**
+- (DELETE) Delete run from Parse (user wants to remove past run)
+```java
+//Note: We will have references to objects through List<Run>
+object.deleteInBackgroud(new DeleteCallback() {
+    public void done(ParseException e) {
+        if(e == null) {
+            //Run successfully deleted
+            //Remove run from List<Run>
+            runAdapter.notifyDataSetChanged();
+        }
+        else {
+            //Error deleting object; tell user
+            Log.e("MainActivity", e.getMessage());
+        }
+    }
+});
+```

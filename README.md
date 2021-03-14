@@ -54,6 +54,7 @@ Runner's High is a mood-tracking and run-tracking app that allows users to log t
 
 **Tab Navigation** (Tab to Screen)
 
+* Login Screen
 * Home Screen
 * Data visuals screen. Graphs etc
 * Mood Logging Screen
@@ -61,30 +62,35 @@ Runner's High is a mood-tracking and run-tracking app that allows users to log t
 
 **Flow Navigation** (Screen to Screen)
 
-* Settings
+* Login Screen
+    * => Home Screen (successful login/sign up)
+* Settings Screen
    * => Back to Homescreen
-* Homescreen
-   * => Maps(Go for run button) 
-   * => Mood Logging screen
-   * => Settings Screen
+* Home Screen
+   * => Maps/Running Screen (Go for run button) 
+   * => Settings Screen (Settings button in action bar)
+* Running Screen
+    * => Mood Screen (when starting and ending run)
+* Settings Screen
+    * => Back button to home screen
 
 ## Wireframes
-<img src="./WireframeCodePath-1.png" width=600>
+<img src="./RunnersHighWireframe.jpg" width=600>
 
 ## Schema
 ### Models
 
 **RunLog**
-| Property | Type           | Description                    |
-| -------- | -------------- | ------------------------------ |
-| objectId | String         | ObjectId stored in Parse       |
-| preMood  | Mood           | Mood before the run            |
-| postMood | Mood           | Mood after the run             |
-| Path     | List<Location> | Path of the run                |
-| Time     | int            | Text                           |
-| Date     | int            | Date of run                    |
-| Distance | double         | Distance of run                |
-| Note     | String         | Extra notes about the run/mood |
+| Property | Type         | Description                    |
+| -------- | ------------ | ------------------------------ |
+| objectId | String       | ObjectId stored in Parse       |
+| preMood  | Mood         | Mood before the run            |
+| postMood | Mood         | Mood after the run             |
+| Path     | List<LatLng> | Path of the run                |
+| Time     | int          | Text                           |
+| Date     | int          | Date of run                    |
+| Distance | double       | Distance of run                |
+| Note     | String       | Extra notes about the run/mood |
 
 **Mood**
 | Property | Type   | Description        |
@@ -94,19 +100,27 @@ Runner's High is a mood-tracking and run-tracking app that allows users to log t
 | Stress   | int    | level of stress    |
 | Overall  | int    | overall vibes      |
 
+**LatLng**
+
+
+| Property  | Type   | Description          |
+| --------- | ------ | -------------------- |
+| Latitude  | double | a point of latitude  |
+| Longitude | double | a point of longitude |
 
 
 
 ### Networking
-- [Home Screen-displays all data for most recent run ]
-- [Data Screen-Displays all data for all runs]
-- [Create basic snippets for each Parse network request]
-- [OPTIONAL: List endpoints if using existing API such as Yelp]
+- Login Screen-requests to sign up, log in, check if logged in
+- Home Screen-displays all data for most recent run
+- Data Screen-displays all data for all runs; user can delete run
+- Running Screen-posts run to Parse when finished
 
-**Login Screen**
+**Login Activity**
 - (GET) Login check network request (when user presses login button)
 ```java
 ParseUser.logInInBackground(USERNAME, PASSWORD, new LogInCallback() {
+    @Override
     public void done(ParseUser user, ParseException e) {
         if(user != null) {
             //Successful login
@@ -128,16 +142,18 @@ user.setUsername(USER_TEXT_STRING);
 user.setPassword(PASS_TEXT_STRING);
 
 user.signUpInBackground(new SignUpCallback() {
-  public void done(ParseException e) {
-    if (e == null) {
-      //User successfully signed up
-      startActivity(new Intent(this, MainActivity.class));
-    } else {
-      //Error signing up
-      //Print error message to user
-      Log.e("LoginActivity", e.getMessage());
+    @Override
+    public void done(ParseException e) {
+        if (e == null) {
+          //User successfully signed up
+          startActivity(new Intent(this, MainActivity.class));
+        } 
+        else {
+          //Error signing up
+          //Print error message to user
+          Log.e("LoginActivity", e.getMessage());
+        }
     }
-  }
 });
 ```
 - (GET) Check if logged in already
@@ -147,8 +163,9 @@ if(ParseUser.getCurrentUser() != null) {
 }
 ```
 
-**RunLog**
+**Run Log (Main Activity)**
 - (GET) Querying all runs to display in RecyclerView
+    - Note that for the most recent run that will be displayed on the Home Fragment, we can take the first run from the list returned from this query
 ```java
 ParseQuery<Run> query = ParseQuery.getQuery(Run.class);
 query.include(Post.KEY_USER);
@@ -166,8 +183,26 @@ query.findInBackground(new FindCallback<Run>(){
     }
 });  
 ```
+- (DELETE) Delete run from Parse (user wants to remove past run)
+```java
+//Note: We will have references to objects through List<Run>
+object.deleteInBackgroud(new DeleteCallback() {
+    @Override
+    public void done(ParseException e) {
+        if(e == null) {
+            //Run successfully deleted
+            //Remove run from List<Run>
+            runAdapter.notifyDataSetChanged();
+        }
+        else {
+            //Error deleting object; tell user
+            Log.e("MainActivity", e.getMessage());
+        }
+    }
+});
+```
 
-**Running/Map Screen**
+**Running/Map Fragment**
 - (POST) Save run request (after user ends run)
 ```java
 //Run is a ParseObject
@@ -183,6 +218,7 @@ run.put("distance", RUN_DISTANCE);
 run.put("note", RUN_NOTE);
 
 run.saveInBackground(new SaveCallback() {
+    @Override
     public void done(ParseException e) {
         if(e == null) {
             //Update the List<Run> we have
@@ -191,25 +227,6 @@ run.saveInBackground(new SaveCallback() {
         else {
             //Run could not be properly saved
             //Print error message to inform user
-            Log.e("MainActivity", e.getMessage());
-        }
-    }
-});
-```
-
-**Data Visuals/Logged Runs Screen**
-- (DELETE) Delete run from Parse (user wants to remove past run)
-```java
-//Note: We will have references to objects through List<Run>
-object.deleteInBackgroud(new DeleteCallback() {
-    public void done(ParseException e) {
-        if(e == null) {
-            //Run successfully deleted
-            //Remove run from List<Run>
-            runAdapter.notifyDataSetChanged();
-        }
-        else {
-            //Error deleting object; tell user
             Log.e("MainActivity", e.getMessage());
         }
     }

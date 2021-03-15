@@ -101,8 +101,6 @@ Runner's High is a mood-tracking and run-tracking app that allows users to log t
 | Overall  | int    | overall vibes      |
 
 **LatLng**
-
-
 | Property  | Type   | Description          |
 | --------- | ------ | -------------------- |
 | Latitude  | double | a point of latitude  |

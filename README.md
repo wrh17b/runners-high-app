@@ -75,7 +75,7 @@ Runner's High is a mood-tracking and run-tracking app that allows users to log t
     * => Back button to home screen
 
 ## Wireframes
-<img src="./RunnersHighWireframe.jpg" width=600>
+<img src="https://i.imgur.com/I8yV65c.jpg" width=600>
 
 ## Schema
 ### Models
@@ -113,10 +113,11 @@ Runner's High is a mood-tracking and run-tracking app that allows users to log t
 - Home Screen-displays all data for most recent run
 - Data Screen-displays all data for all runs; user can delete run
 - Running Screen-posts run to Parse when finished
+- Settings Screen-Log out
 
 **Login Activity**
 - (GET) Login check network request (when user presses login button)
-```java
+```java=
 ParseUser.logInInBackground(USERNAME, PASSWORD, new LogInCallback() {
     @Override
     public void done(ParseUser user, ParseException e) {
@@ -133,7 +134,7 @@ ParseUser.logInInBackground(USERNAME, PASSWORD, new LogInCallback() {
 });
 ```
 - (POST) SignUp network request (when user presses signup button)
-```java
+```java=
 ParseUser user = new ParseUser();
 
 user.setUsername(USER_TEXT_STRING);
@@ -155,16 +156,24 @@ user.signUpInBackground(new SignUpCallback() {
 });
 ```
 - (GET) Check if logged in already
-```java
+```java=
 if(ParseUser.getCurrentUser() != null) {
     startActivity(new Intent(this, MainActivity.class));
 }
 ```
 
+**Settings Activity**
+- (DELETE) Log out current user
+```java=
+ParseUser.logOut();
+ParseUser currentUser = ParseUser.getCurrentUser();
+//Return to login screen
+```
+
 **Run Log (Main Activity)**
 - (GET) Querying all runs to display in RecyclerView
     - Note that for the most recent run that will be displayed on the Home Fragment, we can take the first run from the list returned from this query
-```java
+```java=
 ParseQuery<Run> query = ParseQuery.getQuery(Run.class);
 query.include(Post.KEY_USER);
 query.addDescendingOrder(POST_CREATED_AT);
@@ -182,7 +191,7 @@ query.findInBackground(new FindCallback<Run>(){
 });  
 ```
 - (DELETE) Delete run from Parse (user wants to remove past run)
-```java
+```java=
 //Note: We will have references to objects through List<Run>
 object.deleteInBackgroud(new DeleteCallback() {
     @Override
@@ -202,7 +211,7 @@ object.deleteInBackgroud(new DeleteCallback() {
 
 **Running/Map Fragment**
 - (POST) Save run request (after user ends run)
-```java
+```java=
 //Run is a ParseObject
 Run run = new Run();
 
